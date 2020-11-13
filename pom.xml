@@ -56,43 +56,6 @@
                     <target>8</target>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-jar-plugin</artifactId>-->
-<!--                <version>3.1.0</version>-->
-<!--&lt;!&ndash;                <configuration>&ndash;&gt;-->
-<!--&lt;!&ndash;                    <archive>&ndash;&gt;-->
-<!--&lt;!&ndash;                        <manifest>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <addClasspath>true</addClasspath>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <classpathPrefix>lib/</classpathPrefix>&ndash;&gt;-->
-<!--&lt;!&ndash;                            <mainClass>aneviaro.Main</mainClass>&ndash;&gt;-->
-<!--&lt;!&ndash;                        </manifest>&ndash;&gt;-->
-<!--&lt;!&ndash;                    </archive>&ndash;&gt;-->
-<!--&lt;!&ndash;                </configuration>&ndash;&gt;-->
-<!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-assembly-plugin</artifactId>-->
-<!--                <version>3.1.0</version>-->
-<!--                <configuration>-->
-<!--                    <descriptorRefs>-->
-<!--                        <descriptorRef>jar-with-dependencies</descriptorRef>-->
-<!--                    </descriptorRefs>-->
-<!--                    <archive>-->
-<!--                        <manifest>-->
-<!--                            <mainClass>aneviaro.Main</mainClass>-->
-<!--                        </manifest>-->
-<!--                    </archive>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>single</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
         </plugins>
     </build>
     <dependencies>
