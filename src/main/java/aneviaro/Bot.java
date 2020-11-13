@@ -5,14 +5,15 @@ import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -35,44 +36,91 @@ public class Bot extends TelegramLongPollingBot {
     public Bot() {
     }
 
-    public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            processMessage(update.getMessage());
-        }
+    private static InlineKeyboardMarkup getClarificationButtons() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton wakeUpButton = new InlineKeyboardButton();
+        wakeUpButton.setText("Wake up");
+        wakeUpButton.setCallbackData("Wake up");
+        InlineKeyboardButton goToSleepButton = new InlineKeyboardButton();
+        goToSleepButton.setText("Go to sleep");
+        goToSleepButton.setCallbackData("Go to sleep");
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        row.add(wakeUpButton);
+        row.add(goToSleepButton);
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(row);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return inlineKeyboardMarkup;
     }
 
-    private void processMessage(Message message) {
-        if (isFirst(message.getText())) {
-            send(message, "Greeting, please type in the time you want to go to sleep at: I.e. 22:15");
-        } else {
-            try {
-                sendTimes(message, calculateTime(message.getText()));
-            } catch (ParseException e) {
-                send(message, "Not a valid time format, please try 22:22");
-            }
-        }
-    }
-
-    private List<Calendar> calculateTime(String text) throws ParseException {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
-        Date date = simpleDateFormat.parse(text);
+    private static List<Calendar> calculateTime(Date date, Integer coef) {
         List<Calendar> times = new ArrayList<Calendar>();
         for (int i = 0; i < 6; i++) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(date);
-            calendar.add(Calendar.MINUTE, 90 * (i + 1));
+            calendar.add(Calendar.MINUTE, coef * 90 * (i + 1));
             times.add(calendar);
         }
         return times;
     }
 
-    private void send(Message message, String text) {
+    public void onUpdateReceived(Update update) {
+        if (update.hasMessage()) {
+            processMessage(update.getMessage());
+        } else if (update.hasCallbackQuery()) {
+            processCallback(update.getCallbackQuery());
+        }
+    }
+
+    private void processCallback(CallbackQuery query) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
+        Date date = null;
+        try {
+            date = simpleDateFormat.parse(query.getMessage().getReplyToMessage().getText());
+        } catch (ParseException e) {
+            send(query.getMessage(), "Not a valid time format, please try 22:22", null);
+        }
+        if (query.getData().equals("Go to sleep")) {
+            send(query.getMessage(), formatTimes("You can wake up at:\n", calculateTime(date, 1)), null);
+        } else if (query.getData().equals("Wake up")) {
+            send(query.getMessage(),formatTimes("You can go to sleep at:\n", calculateTime(date, -1)) , null);
+        } else {
+            send(query.getMessage(), "Not a valid time format, please try 22:22", null);
+        }
+    }
+
+    private void processMessage(Message message) {
+        if (isFirst(message.getText())) {
+            send(message, "Greeting, please type in the time you want to go to sleep at: I.e. 22:15", null);
+        } else if (message.getText().equals("/now")){
+//            send(message, formatTimes("You can wake up at:\n", calculateTime(new Date(message), 1)), null);
+            send(message, "Sorry, we don't support this feature right now", null);
+        }
+        else {
+            try {
+                sendClarification(message);
+            } catch (ParseException e) {
+                send(message, "Not a valid time format, please try 22:22", null);
+            }
+        }
+    }
+
+    private void sendClarification(Message message) throws ParseException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
+        Date date = simpleDateFormat.parse(message.getText());
+        String text = "Is it wake up time or go to sleep time?";
+        send(message, text, getClarificationButtons());
+    }
+
+    private void send(Message message, String text, @Nullable InlineKeyboardMarkup keyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setText(text);
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(message.getChatId());
         sendMessage.setReplyToMessageId(message.getMessageId());
-
+        if (keyboardMarkup != null) {
+            sendMessage.setReplyMarkup(keyboardMarkup);
+        }
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -80,36 +128,16 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendTimes(Message message, List<Calendar> times) {
+    private String formatTimes(String text, List<Calendar> times) {
         StringBuilder answer = new StringBuilder();
-        answer.append("You can wake up at:\n");
+        answer.append(text);
         SimpleDateFormat output = new SimpleDateFormat("HH:mm");
         times.forEach((time) -> {
             answer.append(output.format(time.getTime()));
             answer.append('\n');
         });
-        send(message, answer.toString());
+        return answer.toString();
     }
-
-//    private static ReplyKeyboardMarkup getSettingsKeyboard(String language) {
-//        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-//        replyKeyboardMarkup.setSelective(true);
-//        replyKeyboardMarkup.setResizeKeyboard(true);
-//        replyKeyboardMarkup.setOneTimeKeyboard(false);
-//
-//        List<KeyboardRow> keyboard = new ArrayList<>();
-//        KeyboardRow keyboardFirstRow = new KeyboardRow();
-//        keyboardFirstRow.add(new KeyboardButton(""));
-//        keyboardFirstRow.add(getUnitsCommand(language));
-//        KeyboardRow keyboardSecondRow = new KeyboardRow();
-//        keyboardSecondRow.add(getAlertsCommand(language));
-//        keyboardSecondRow.add(getBackCommand(language));
-//        keyboard.add(keyboardFirstRow);
-//        keyboard.add(keyboardSecondRow);
-//        replyKeyboardMarkup.setKeyboard(keyboard);
-//
-//        return replyKeyboardMarkup;
-//    }
 
     private boolean isFirst(String text) {
         return text.equals("/start") || text.equals("/restart");
