@@ -9,3 +9,5 @@ Run via docker:
 ## Link to a working chat:
 
 t.me/wake_me_bot
+
+Take care!
