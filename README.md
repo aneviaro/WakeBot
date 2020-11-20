@@ -10,4 +10,4 @@ Run via docker:
 
 t.me/wake_me_bot
 
-Take care!
+
