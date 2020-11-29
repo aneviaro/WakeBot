@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -54,7 +55,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private static List<Calendar> calculateTime(Date date, Integer coef) {
-        List<Calendar> times = new ArrayList<Calendar>();
+        List<Calendar> times = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(date);
@@ -74,29 +75,29 @@ public class Bot extends TelegramLongPollingBot {
 
     private void processCallback(CallbackQuery query) {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
+        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
+        answerCallbackQuery.setCallbackQueryId(query.getId());
         Date date = null;
         try {
             date = simpleDateFormat.parse(query.getMessage().getReplyToMessage().getText());
         } catch (ParseException e) {
-            send(query.getMessage(), "Not a valid time format, please try 22:22", null);
+            send(query.getMessage(), "Not a valid time format, please try *22:22*", null);
         }
         if (query.getData().equals("Go to sleep")) {
-            send(query.getMessage(), formatTimes("You can wake up at:\n", calculateTime(date, 1)), null);
+            send(query.getMessage(), formatTimes("The best time to wake up is:\n", calculateTime(date, 1)), null);
         } else if (query.getData().equals("Wake up")) {
-            send(query.getMessage(),formatTimes("You can go to sleep at:\n", calculateTime(date, -1)) , null);
+            send(query.getMessage(), formatTimes("The best time to go to sleep is:\n", calculateTime(date, -1)), null);
         } else {
-            send(query.getMessage(), "Not a valid time format, please try 22:22", null);
+            send(query.getMessage(), "Not a valid time format, please try *22:22*", null);
         }
     }
 
     private void processMessage(Message message) {
         if (isFirst(message.getText())) {
-            send(message, "Greeting, please type in the time you want to go to sleep at: I.e. 22:15", null);
-        } else if (message.getText().equals("/now")){
-//            send(message, formatTimes("You can wake up at:\n", calculateTime(new Date(message), 1)), null);
+            send(message, "Greeting, please type in the time in the next format: I.e. *22:15*", null);
+        } else if (message.getText().equals("/now")) {
             send(message, "Sorry, we don't support this feature right now", null);
-        }
-        else {
+        } else {
             try {
                 sendClarification(message);
             } catch (ParseException e) {
@@ -107,7 +108,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private void sendClarification(Message message) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
-        Date date = simpleDateFormat.parse(message.getText());
+        simpleDateFormat.parse(message.getText());
         String text = "Is it wake up time or go to sleep time?";
         send(message, text, getClarificationButtons());
     }
@@ -132,10 +133,12 @@ public class Bot extends TelegramLongPollingBot {
         StringBuilder answer = new StringBuilder();
         answer.append(text);
         SimpleDateFormat output = new SimpleDateFormat("HH:mm");
+        answer.append("*");
         times.forEach((time) -> {
             answer.append(output.format(time.getTime()));
             answer.append('\n');
         });
+        answer.append("*");
         return answer.toString();
     }
 
