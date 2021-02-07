@@ -29,6 +29,8 @@ import java.util.logging.Logger;
 public class Bot extends TelegramLongPollingBot {
     public static final String TOKEN = "1499583354:AAELEOBlZyUl2M8RcqwmJjUxzhraVl_UlfM";
     public static final String USERNAME = "wake_me_bot";
+    public static final String WAKEUP = "Wake up";
+    public static final String GOTOSLEEP = "Go to sleep";
 
     public Bot(DefaultBotOptions options) {
         super(options);
@@ -37,14 +39,14 @@ public class Bot extends TelegramLongPollingBot {
     public Bot() {
     }
 
-    private static InlineKeyboardMarkup getClarificationButtons() {
+    private static InlineKeyboardMarkup makeClarificationButtons() {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         InlineKeyboardButton wakeUpButton = new InlineKeyboardButton();
-        wakeUpButton.setText("Wake up");
-        wakeUpButton.setCallbackData("Wake up");
+        wakeUpButton.setText(WAKEUP);
+        wakeUpButton.setCallbackData(WAKEUP);
         InlineKeyboardButton goToSleepButton = new InlineKeyboardButton();
-        goToSleepButton.setText("Go to sleep");
-        goToSleepButton.setCallbackData("Go to sleep");
+        goToSleepButton.setText(GOTOSLEEP);
+        goToSleepButton.setCallbackData(GOTOSLEEP);
         List<InlineKeyboardButton> row = new ArrayList<>();
         row.add(wakeUpButton);
         row.add(goToSleepButton);
@@ -81,27 +83,28 @@ public class Bot extends TelegramLongPollingBot {
         try {
             date = simpleDateFormat.parse(query.getMessage().getReplyToMessage().getText());
         } catch (ParseException e) {
-            send(query.getMessage(), "Not a valid time format, please try *22:22*", null);
+            send(query.getMessage(), Errors.NotValidTimeFormat.getMessage(), null);
         }
-        if (query.getData().equals("Go to sleep")) {
-            send(query.getMessage(), formatTimes("The best time to wake up is:\n", calculateTime(date, 1)), null);
-        } else if (query.getData().equals("Wake up")) {
-            send(query.getMessage(), formatTimes("The best time to go to sleep is:\n", calculateTime(date, -1)), null);
+        if (query.getData().equals(GOTOSLEEP)) {
+            send(query.getMessage(), formatTimes(Messages.BestTimeToWakeUp.getMessage(), calculateTime(date, 1)), null);
+        } else if (query.getData().equals(WAKEUP)) {
+            send(query.getMessage(), formatTimes(Messages.BestTimeToGoToSleep.getMessage(), calculateTime(date, -1)),
+                    null);
         } else {
-            send(query.getMessage(), "Not a valid time format, please try *22:22*", null);
+            send(query.getMessage(), Errors.NotValidTimeFormat.getMessage(), null);
         }
     }
 
     private void processMessage(Message message) {
         if (isFirst(message.getText())) {
-            send(message, "Greeting, please type in the time in the next format: I.e. *22:15*", null);
+            send(message, Messages.Greetings.getMessage(), null);
         } else if (message.getText().equals("/now")) {
-            send(message, "Sorry, we don't support this feature right now", null);
+            send(message, Errors.FeatureIsNotSupported.getMessage(), null);
         } else {
             try {
                 sendClarification(message);
             } catch (ParseException e) {
-                send(message, "Not a valid time format, please try 22:22", null);
+                send(message, Errors.NotValidTimeFormat.getMessage(), null);
             }
         }
     }
@@ -109,8 +112,7 @@ public class Bot extends TelegramLongPollingBot {
     private void sendClarification(Message message) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
         simpleDateFormat.parse(message.getText());
-        String text = "Is it wake up time or go to sleep time?";
-        send(message, text, getClarificationButtons());
+        send(message, Messages.ClarificationQuestion.getMessage(), makeClarificationButtons());
     }
 
     private void send(Message message, String text, @Nullable InlineKeyboardMarkup keyboardMarkup) {
