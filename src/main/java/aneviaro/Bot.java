@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 @Component
 public class Bot extends TelegramLongPollingBot {
-    public static final String TOKEN = "1499583354:AAELEOBlZyUl2M8RcqwmJjUxzhraVl_UlfM";
+    public static final String TOKEN = System.getenv("BOT_TOKEN");
     public static final String USERNAME = "wake_me_bot";
     public static final String WAKEUP = "Wake up";
     public static final String GOTOSLEEP = "Go to sleep";
